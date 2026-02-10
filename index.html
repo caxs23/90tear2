@@ -122,13 +122,14 @@
             animation: fever-scale 0.5s infinite ease-in-out;
         }
 
-        /* Rolling Banner Animation */
-        @keyframes roll-banner {
-            0% { transform: translateX(100%); }
+        /* Rolling Banner Animation (Modified: Once, slower) */
+        @keyframes roll-banner-once {
+            0% { transform: translateX(100vw); }
             100% { transform: translateX(-100%); }
         }
         .banner-rolling {
-            animation: roll-banner 10s linear infinite;
+            /* Once across the screen over 6 seconds */
+            animation: roll-banner-once 6s linear forwards;
         }
     </style>
 </head>
@@ -150,10 +151,10 @@
         <p class="absolute bottom-6 text-gray-500 text-sm">Design by AI Gemini</p>
     </div>
 
-    <!-- Banner Overlay (Modified: Removed red background and borders) -->
-    <div id="banner-container" class="absolute top-24 left-0 w-full z-[55] hidden py-2 overflow-hidden whitespace-nowrap pointer-events-none">
-        <div class="banner-rolling font-bold text-xl inline-block text-red-600 drop-shadow-sm">
-            그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp;
+    <!-- Banner Overlay (Modified: Larger Text, No Background) -->
+    <div id="banner-container" class="absolute top-32 left-0 w-full z-[55] hidden overflow-hidden whitespace-nowrap pointer-events-none">
+        <div id="banner-text" class="font-impact text-5xl inline-block text-red-600 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+            그녀가 폭주하고 있습니다.
         </div>
     </div>
 
@@ -253,6 +254,7 @@
         const feverBtn = document.getElementById('fever-btn');
         const feverActiveText = document.getElementById('fever-active-text');
         const bannerContainer = document.getElementById('banner-container');
+        const bannerText = document.getElementById('banner-text');
 
         // --- Audio Object ---
         const tearAudio = new Audio(TEAR_AUDIO_URL);
@@ -285,7 +287,6 @@
 
             // Decay Logic
             setInterval(() => {
-                // 게이지가 100(MAX)이 아니거나 피버 타임이 아닐 때만 감소
                 if (!isFeverActive && feverGauge > 0 && feverGauge < FEVER_MAX) {
                     feverGauge = Math.max(0, feverGauge - 0.3);
                     updateFeverUI();
@@ -392,10 +393,9 @@
                 updateFeverUI();
             }
 
-            // Banner trigger logic (unchanged)
-            if (score === 50 || score === 100) {
-                bannerContainer.classList.remove('hidden');
-                setTimeout(() => bannerContainer.classList.add('hidden'), 5000);
+            // Banner trigger logic: Every 50 tears
+            if (score > 0 && score % 50 === 0) {
+                triggerBanner();
             }
 
             gameArea.classList.add('shake-active');
@@ -421,6 +421,19 @@
             } else {
                 setTimeout(() => loadNextBag(), 800);
             }
+        }
+
+        function triggerBanner() {
+            bannerContainer.classList.remove('hidden');
+            bannerText.classList.remove('banner-rolling');
+            // Force reflow to restart animation
+            void bannerText.offsetWidth; 
+            bannerText.classList.add('banner-rolling');
+            
+            // Hide container after animation finishes (6s)
+            setTimeout(() => {
+                bannerContainer.classList.add('hidden');
+            }, 6000);
         }
 
         function showMilestone(count) {
