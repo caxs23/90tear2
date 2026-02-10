@@ -69,8 +69,8 @@
         .bag-image {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* 꽉 차게 */
-            transition: opacity 0.1s; /* 부드러운 사라짐 */
+            object-fit: cover; 
+            transition: opacity 0.1s; 
         }
 
         .tear-overlay {
@@ -199,11 +199,12 @@
 
         <!-- Fever UI Footer -->
         <div class="absolute bottom-10 left-0 w-full px-10 z-40 flex flex-col items-center gap-4">
-            <div class="w-full h-4 bg-gray-800/50 rounded-full overflow-hidden border border-white/20 shadow-inner">
-                <div id="fever-bar" class="h-full w-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 transition-all duration-200"></div>
+            <!-- Simplified Thin Red Gauge Bar -->
+            <div class="w-full h-1.5 bg-gray-800/30 rounded-full overflow-hidden">
+                <div id="fever-bar" class="h-full w-0 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] transition-all duration-200"></div>
             </div>
-            <button id="fever-btn" onclick="activateFever()" disabled class="bg-gray-500 text-white font-bold py-3 px-10 rounded-xl opacity-30 cursor-not-allowed transition-all shadow-lg active:scale-95">
-                FEVER READY
+            <button id="fever-btn" onclick="activateFever()" disabled class="bg-gray-500 text-white font-bold py-3 px-10 rounded-xl opacity-30 cursor-not-allowed transition-all shadow-lg active:scale-95 font-impact uppercase tracking-widest">
+                피버 타임
             </button>
         </div>
 
@@ -231,10 +232,11 @@
         let currentBagQueue = [];
         let isTearing = false;
         let isFirstBag = true;
-        let feverGauge = 0; // 0 to 100
+        let feverGauge = 0; 
         let isFeverActive = false;
         const FEVER_MAX = 100;
-        const FEVER_INCREMENT = 5; // 20 times to fill
+        // Increased Increment (2.3x): 5 * 2.3 = 11.5 per tear
+        const FEVER_INCREMENT = 11.5; 
 
         // --- Elements ---
         const startScreen = document.getElementById('start-screen');
@@ -282,17 +284,17 @@
             preloadImages([...BAG_POOL, TEAR_IMG]);
             loadNextBag();
 
-            // Decay fever gauge over time
+            // Slow decay
             setInterval(() => {
                 if (!isFeverActive && feverGauge > 0) {
-                    feverGauge = Math.max(0, feverGauge - 0.5);
+                    feverGauge = Math.max(0, feverGauge - 0.3);
                     updateFeverUI();
                 }
             }, 100);
         }
 
         function resetGame() {
-            location.reload(); // Simple full reset
+            location.reload();
         }
 
         function preloadImages(urls) {
@@ -302,7 +304,6 @@
             });
         }
 
-        // --- Bag Logic ---
         function loadNextBag() {
             if (isFeverActive) return; 
             isTearing = false;
@@ -323,19 +324,16 @@
             bagImg.style.transform = "scale(1)";
         }
 
-        // --- Fever Mode Logic ---
         function updateFeverUI() {
             feverBar.style.width = feverGauge + '%';
             if (feverGauge >= FEVER_MAX) {
                 feverBtn.disabled = false;
-                feverBtn.innerText = "FEVER TIME ON!!";
                 feverBtn.classList.remove('bg-gray-500', 'opacity-30', 'cursor-not-allowed');
-                feverBtn.classList.add('bg-red-600', 'animate-bounce', 'shadow-[0_0_15px_#ff0000]');
+                feverBtn.classList.add('bg-red-600', 'animate-pulse', 'shadow-[0_0_20px_#ff0000]');
             } else if (!isFeverActive) {
                 feverBtn.disabled = true;
-                feverBtn.innerText = "FEVER READY";
                 feverBtn.classList.add('bg-gray-500', 'opacity-30', 'cursor-not-allowed');
-                feverBtn.classList.remove('bg-red-600', 'animate-bounce');
+                feverBtn.classList.remove('bg-red-600', 'animate-pulse');
             }
         }
 
@@ -343,13 +341,12 @@
             if (isFeverActive) return;
             isFeverActive = true;
             feverBtn.disabled = true;
-            feverBtn.innerText = "BURNING!!!";
-            feverBtn.classList.remove('animate-bounce');
+            feverBtn.classList.remove('animate-pulse');
             feverActiveText.classList.remove('hidden');
             feverActiveText.classList.add('flex');
             
             let feverDuration = 5000;
-            let intervalTime = 150;
+            let intervalTime = 120; // Slightly faster automatic tearing
             
             const feverInterval = setInterval(() => {
                 performTear(true);
@@ -366,7 +363,6 @@
             }, feverDuration);
         }
 
-        // --- Interaction Logic ---
         let startX = 0, startY = 0;
         gameArea.addEventListener('touchstart', (e) => { if (isTearing || isFeverActive) return; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: false });
         gameArea.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -380,49 +376,40 @@
             if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) performTear();
         }
 
-        // --- The Action ---
         function performTear(fromFever = false) {
             if (!fromFever && (isTearing || isFeverActive)) return;
             isTearing = true;
 
-            // Audio
             tearAudio.currentTime = 0;
             tearAudio.play().catch(e => {});
 
-            // Score
             score++;
             scoreEl.innerText = score;
             if (hintEl) hintEl.style.display = 'none';
 
-            // Fever Gauge
             if (!fromFever) {
                 feverGauge = Math.min(FEVER_MAX, feverGauge + FEVER_INCREMENT);
                 updateFeverUI();
             }
 
-            // Banner Check
             if (score === 50 || score === 100) {
                 bannerContainer.classList.remove('hidden');
                 setTimeout(() => bannerContainer.classList.add('hidden'), 5000);
             }
 
-            // Visuals
             gameArea.classList.add('shake-active');
             bagImg.style.opacity = '0'; 
             tearOverlay.style.opacity = '1';
             tearOverlay.classList.add('tear-flash');
 
-            // Physics Particles
-            createGravityParticles(fromFever);
+            createGravityParticles(fromFever || isFeverActive);
 
-            // Milestone
             if (!fromFever && score > 0 && score % 10 === 0) showMilestone(score);
 
             if (navigator.vibrate) navigator.vibrate(fromFever ? 20 : [50, 50, 50]);
 
             if (fromFever) {
                 setTimeout(() => {
-                    // Quick swap for fever
                     currentBagQueue = [...BAG_POOL].sort(() => Math.random() - 0.5);
                     bagImg.src = currentBagQueue.pop();
                     tearOverlay.classList.remove('tear-flash');
@@ -443,7 +430,7 @@
         }
 
         function createGravityParticles(isFever = false) {
-            const particleCount = isFever ? 15 : 35;
+            const particleCount = isFever ? 20 : 35;
             const colors = ['#87CEEB', '#B0E0E6', '#E0F7FA', '#ffffff', '#4FC3F7'];
             const originX = window.innerWidth / 2;
             const originY = window.innerHeight / 2;
@@ -458,13 +445,13 @@
                 p.style.top = originY + 'px';
                 particlesContainer.appendChild(p);
 
-                let vx = (Math.random() - 0.5) * 30; 
-                let vy = -(Math.random() * 20 + 20); // Always upward
-                const gravity = 1.5;
+                let vx = (Math.random() - 0.5) * 35; 
+                let vy = -(Math.random() * 25 + 20); 
+                const gravity = 1.6;
                 let posX = originX, posY = originY, opacity = 1;
 
                 function update() {
-                    posX += vx; posY += vy; vy += gravity; opacity -= 0.02;
+                    posX += vx; posY += vy; vy += gravity; opacity -= 0.025;
                     p.style.transform = `translate(${posX - originX}px, ${posY - originY}px)`;
                     p.style.opacity = opacity;
                     if (opacity > 0 && posY < window.innerHeight) requestAnimationFrame(update);
