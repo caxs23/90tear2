@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>숙영이는 수액백을 찢어</title>
+    <!-- Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: none; /* Prevent browser swipe navigation */
+            background-color: #1a1a1a;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Title Font */
+        .font-impact {
+            font-family: 'Black Han Sans', sans-serif;
+        }
+
+        /* Game Screen Container */
+        #game-screen {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        /* Shake Animation */
+        @keyframes shake-hard {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-10px, -10px) rotate(-3deg); filter: blur(1px); }
+            20% { transform: translate(10px, 10px) rotate(3deg); }
+            30% { transform: translate(-10px, 10px) rotate(-3deg); filter: blur(2px); }
+            40% { transform: translate(10px, -10px) rotate(3deg); }
+            50% { transform: translate(-5px, 0) rotate(-1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); filter: blur(0); }
+        }
+
+        .shake-active {
+            animation: shake-hard 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Tear Overlay Animation */
+        .tear-flash {
+            animation: flash-in 0.2s ease-out forwards;
+        }
+
+        @keyframes flash-in {
+            0% { opacity: 0; transform: scale(1.5) rotate(-5deg); }
+            50% { opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        /* Image Container */
+        .bag-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .bag-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 꽉 차게 */
+            transition: opacity 0.1s; /* 부드러운 사라짐 */
+        }
+
+        .tear-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Particles */
+        .particle {
+            position: absolute;
+            background: #87CEEB; /* Sky Blue */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Milestone Popup */
+        #milestone-popup {
+            pointer-events: none;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .milestone-active {
+            transform: scale(1) !important;
+            animation: pulse-milestone 1s infinite;
+        }
+
+        @keyframes pulse-milestone {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Fever Time Animation */
+        @keyframes fever-scale {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px #ff3b3b); }
+            50% { transform: scale(1.3); filter: drop-shadow(0 0 30px #ffea00); }
+        }
+        .fever-text-anim {
+            animation: fever-scale 0.5s infinite ease-in-out;
+        }
+
+        /* Rolling Banner Animation */
+        @keyframes roll-banner {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .banner-rolling {
+            animation: roll-banner 10s linear infinite;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-gray-900 text-white p-6 transition-opacity duration-500">
+        <h1 class="font-impact text-5xl mb-4 text-center text-red-500 leading-tight drop-shadow-lg">
+            숙영이는<br>수액백을<br>찢어
+        </h1>
+        <p class="text-gray-300 mb-12 text-center text-lg leading-relaxed">
+            스트레스 받으시나요?<br>
+            화면을 좌우로 <strong>스와이프</strong>해서<br>
+            수액백을 시원하게 찢어버리세요!
+        </p>
+        <button onclick="startGame()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-lg transform transition active:scale-95 shadow-[0_0_20px_rgba(220,38,38,0.6)]">
+            게임 시작
+        </button>
+        <p class="absolute bottom-6 text-gray-500 text-sm">Design by AI Gemini</p>
+    </div>
+
+    <!-- Banner Overlay -->
+    <div id="banner-container" class="absolute top-24 left-0 w-full z-[55] hidden bg-red-600/90 text-white py-2 overflow-hidden whitespace-nowrap border-y-2 border-yellow-400">
+        <div class="banner-rolling font-bold text-xl inline-block">
+            그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp;
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="absolute inset-0 hidden flex-col">
+        
+        <!-- UI Header -->
+        <div class="absolute top-0 left-0 w-full z-40 p-6 flex justify-between items-start pointer-events-none">
+            <div class="bg-white/90 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-xl border-l-4 border-red-500">
+                <span class="block text-xs text-gray-500 font-bold uppercase tracking-wider">찢은 수액백</span>
+                <span id="score" class="text-4xl font-black text-gray-800 font-impact">0</span>
+            </div>
+            
+            <button onclick="resetGame()" class="pointer-events-auto bg-gray-800/80 text-white p-2 rounded-full hover:bg-black transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Milestone/Fever Text Popup -->
+        <div id="milestone-wrapper" class="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div id="milestone-popup" class="flex flex-col items-center">
+                <span id="milestone-count" class="text-6xl text-yellow-400 font-impact drop-shadow-md mb-2"></span>
+                <span id="milestone-msg" class="text-4xl text-white font-bold drop-shadow-md"></span>
+            </div>
+            <div id="fever-active-text" class="hidden flex-col items-center">
+                <span class="text-7xl text-red-500 font-impact fever-text-anim drop-shadow-2xl">FEVER TIME!</span>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div id="game-area" class="bag-container cursor-grab active:cursor-grabbing">
+            <img id="current-bag-img" src="" alt="IV Bag" class="bag-image">
+            <img id="tear-overlay-img" src="https://raw.githubusercontent.com/caxs23/90tear/main/tear.png" alt="Tear" class="tear-overlay">
+            
+            <div id="hint" class="absolute z-30 pointer-events-none animate-pulse opacity-70">
+                <svg class="w-24 h-24 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Fever UI Footer -->
+        <div class="absolute bottom-10 left-0 w-full px-10 z-40 flex flex-col items-center gap-4">
+            <div class="w-full h-4 bg-gray-800/50 rounded-full overflow-hidden border border-white/20 shadow-inner">
+                <div id="fever-bar" class="h-full w-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 transition-all duration-200"></div>
+            </div>
+            <button id="fever-btn" onclick="activateFever()" disabled class="bg-gray-500 text-white font-bold py-3 px-10 rounded-xl opacity-30 cursor-not-allowed transition-all shadow-lg active:scale-95">
+                FEVER READY
+            </button>
+        </div>
+
+        <!-- Particle Container -->
+        <div id="particles" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
+    </div>
+
+    <script>
+        // --- Asset Configuration ---
+        const INITIAL_BAG = "https://raw.githubusercontent.com/caxs23/90tear/main/NS.png";
+        const BAG_POOL = [
+            "https://raw.githubusercontent.com/caxs23/90tear/main/NS.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/10dw.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/5ds.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/5dw.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/pls.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/wfi.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/tpn.png"
+        ];
+        const TEAR_IMG = "https://raw.githubusercontent.com/caxs23/90tear/main/tear.png";
+        const TEAR_AUDIO_URL = "https://raw.githubusercontent.com/caxs23/90tear/main/Shocked.mp3";
+
+        // --- Game State ---
+        let score = 0;
+        let currentBagQueue = [];
+        let isTearing = false;
+        let isFirstBag = true;
+        let feverGauge = 0; // 0 to 100
+        let isFeverActive = false;
+        const FEVER_MAX = 100;
+        const FEVER_INCREMENT = 5; // 20 times to fill
+
+        // --- Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameArea = document.getElementById('game-area');
+        const bagImg = document.getElementById('current-bag-img');
+        const tearOverlay = document.getElementById('tear-overlay-img');
+        const scoreEl = document.getElementById('score');
+        const particlesContainer = document.getElementById('particles');
+        const hintEl = document.getElementById('hint');
+        const milestonePopup = document.getElementById('milestone-popup');
+        const milestoneCount = document.getElementById('milestone-count');
+        const milestoneMsg = document.getElementById('milestone-msg');
+        const feverBar = document.getElementById('fever-bar');
+        const feverBtn = document.getElementById('fever-btn');
+        const feverActiveText = document.getElementById('fever-active-text');
+        const bannerContainer = document.getElementById('banner-container');
+
+        // --- Audio Object ---
+        const tearAudio = new Audio(TEAR_AUDIO_URL);
+
+        // --- Milestone Messages ---
+        const MILESTONE_MSGS = ["대단해요!", "놀라워요!", "미쳤다!", "전설의 등장!", "멈출 수 없어!", "스트레스 타파!", "신의 손!"];
+
+        // --- Initialization ---
+        function startGame() {
+            startScreen.style.opacity = '0';
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                gameScreen.classList.remove('hidden');
+                gameScreen.classList.add('flex');
+                initGame();
+            }, 500);
+        }
+
+        function initGame() {
+            score = 0;
+            feverGauge = 0;
+            scoreEl.innerText = score;
+            isFirstBag = true;
+            isTearing = false;
+            isFeverActive = false;
+            updateFeverUI();
+            
+            preloadImages([...BAG_POOL, TEAR_IMG]);
+            loadNextBag();
+
+            // Decay fever gauge over time
+            setInterval(() => {
+                if (!isFeverActive && feverGauge > 0) {
+                    feverGauge = Math.max(0, feverGauge - 0.5);
+                    updateFeverUI();
+                }
+            }, 100);
+        }
+
+        function resetGame() {
+            location.reload(); // Simple full reset
+        }
+
+        function preloadImages(urls) {
+            urls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+
+        // --- Bag Logic ---
+        function loadNextBag() {
+            if (isFeverActive) return; 
+            isTearing = false;
+            tearOverlay.classList.remove('tear-flash');
+            tearOverlay.style.opacity = '0';
+            bagImg.style.opacity = '1'; 
+            gameArea.classList.remove('shake-active');
+
+            if (isFirstBag) {
+                bagImg.src = INITIAL_BAG;
+                isFirstBag = false;
+            } else {
+                if (currentBagQueue.length === 0) {
+                    currentBagQueue = [...BAG_POOL].sort(() => Math.random() - 0.5);
+                }
+                bagImg.src = currentBagQueue.pop();
+            }
+            bagImg.style.transform = "scale(1)";
+        }
+
+        // --- Fever Mode Logic ---
+        function updateFeverUI() {
+            feverBar.style.width = feverGauge + '%';
+            if (feverGauge >= FEVER_MAX) {
+                feverBtn.disabled = false;
+                feverBtn.innerText = "FEVER TIME ON!!";
+                feverBtn.classList.remove('bg-gray-500', 'opacity-30', 'cursor-not-allowed');
+                feverBtn.classList.add('bg-red-600', 'animate-bounce', 'shadow-[0_0_15px_#ff0000]');
+            } else if (!isFeverActive) {
+                feverBtn.disabled = true;
+                feverBtn.innerText = "FEVER READY";
+                feverBtn.classList.add('bg-gray-500', 'opacity-30', 'cursor-not-allowed');
+                feverBtn.classList.remove('bg-red-600', 'animate-bounce');
+            }
+        }
+
+        function activateFever() {
+            if (isFeverActive) return;
+            isFeverActive = true;
+            feverBtn.disabled = true;
+            feverBtn.innerText = "BURNING!!!";
+            feverBtn.classList.remove('animate-bounce');
+            feverActiveText.classList.remove('hidden');
+            feverActiveText.classList.add('flex');
+            
+            let feverDuration = 5000;
+            let intervalTime = 150;
+            
+            const feverInterval = setInterval(() => {
+                performTear(true);
+            }, intervalTime);
+
+            setTimeout(() => {
+                clearInterval(feverInterval);
+                isFeverActive = false;
+                feverGauge = 0;
+                feverActiveText.classList.add('hidden');
+                feverActiveText.classList.remove('flex');
+                updateFeverUI();
+                loadNextBag();
+            }, feverDuration);
+        }
+
+        // --- Interaction Logic ---
+        let startX = 0, startY = 0;
+        gameArea.addEventListener('touchstart', (e) => { if (isTearing || isFeverActive) return; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: false });
+        gameArea.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        gameArea.addEventListener('touchend', (e) => { if (isTearing || isFeverActive) return; handleSwipe(startX, e.changedTouches[0].clientX, startY, e.changedTouches[0].clientY); });
+        gameArea.addEventListener('mousedown', (e) => { if (isTearing || isFeverActive) return; startX = e.clientX; startY = e.clientY; });
+        gameArea.addEventListener('mouseup', (e) => { if (isTearing || isFeverActive) return; handleSwipe(startX, e.clientX, startY, e.clientY); });
+
+        function handleSwipe(start, end, startY, endY) {
+            const diffX = end - start;
+            const diffY = endY - startY;
+            if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) performTear();
+        }
+
+        // --- The Action ---
+        function performTear(fromFever = false) {
+            if (!fromFever && (isTearing || isFeverActive)) return;
+            isTearing = true;
+
+            // Audio
+            tearAudio.currentTime = 0;
+            tearAudio.play().catch(e => {});
+
+            // Score
+            score++;
+            scoreEl.innerText = score;
+            if (hintEl) hintEl.style.display = 'none';
+
+            // Fever Gauge
+            if (!fromFever) {
+                feverGauge = Math.min(FEVER_MAX, feverGauge + FEVER_INCREMENT);
+                updateFeverUI();
+            }
+
+            // Banner Check
+            if (score === 50 || score === 100) {
+                bannerContainer.classList.remove('hidden');
+                setTimeout(() => bannerContainer.classList.add('hidden'), 5000);
+            }
+
+            // Visuals
+            gameArea.classList.add('shake-active');
+            bagImg.style.opacity = '0'; 
+            tearOverlay.style.opacity = '1';
+            tearOverlay.classList.add('tear-flash');
+
+            // Physics Particles
+            createGravityParticles(fromFever);
+
+            // Milestone
+            if (!fromFever && score > 0 && score % 10 === 0) showMilestone(score);
+
+            if (navigator.vibrate) navigator.vibrate(fromFever ? 20 : [50, 50, 50]);
+
+            if (fromFever) {
+                setTimeout(() => {
+                    // Quick swap for fever
+                    currentBagQueue = [...BAG_POOL].sort(() => Math.random() - 0.5);
+                    bagImg.src = currentBagQueue.pop();
+                    tearOverlay.classList.remove('tear-flash');
+                    tearOverlay.style.opacity = '0';
+                    bagImg.style.opacity = '1';
+                    gameArea.classList.remove('shake-active');
+                }, 100);
+            } else {
+                setTimeout(() => loadNextBag(), 800);
+            }
+        }
+
+        function showMilestone(count) {
+            milestoneCount.innerText = `${count}개 돌파!`;
+            milestoneMsg.innerText = MILESTONE_MSGS[Math.floor(Math.random() * MILESTONE_MSGS.length)];
+            milestonePopup.classList.add('milestone-active');
+            setTimeout(() => milestonePopup.classList.remove('milestone-active'), 2000);
+        }
+
+        function createGravityParticles(isFever = false) {
+            const particleCount = isFever ? 15 : 35;
+            const colors = ['#87CEEB', '#B0E0E6', '#E0F7FA', '#ffffff', '#4FC3F7'];
+            const originX = window.innerWidth / 2;
+            const originY = window.innerHeight / 2;
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                const size = Math.random() * 8 + 4 + 'px';
+                p.style.width = p.style.height = size;
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                p.style.left = originX + 'px';
+                p.style.top = originY + 'px';
+                particlesContainer.appendChild(p);
+
+                let vx = (Math.random() - 0.5) * 30; 
+                let vy = -(Math.random() * 20 + 20); // Always upward
+                const gravity = 1.5;
+                let posX = originX, posY = originY, opacity = 1;
+
+                function update() {
+                    posX += vx; posY += vy; vy += gravity; opacity -= 0.02;
+                    p.style.transform = `translate(${posX - originX}px, ${posY - originY}px)`;
+                    p.style.opacity = opacity;
+                    if (opacity > 0 && posY < window.innerHeight) requestAnimationFrame(update);
+                    else p.remove();
+                }
+                requestAnimationFrame(update);
+            }
+        }
+    </script>
+</body>
+</html>
