@@ -130,6 +130,12 @@
         .banner-rolling {
             animation: roll-banner-once 6s linear forwards;
         }
+
+        /* Ending Overlay Style */
+        #ending-overlay {
+            background-color: black;
+            transition: opacity 1s ease-in-out;
+        }
     </style>
 </head>
 <body class="h-screen w-screen relative">
@@ -203,13 +209,28 @@
             <div class="w-full h-1.5 bg-gray-800/30 rounded-full overflow-hidden">
                 <div id="fever-bar" class="h-full w-0 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] transition-all duration-200"></div>
             </div>
-            <button id="fever-btn" onclick="activateFever()" disabled class="bg-gray-500 text-white font-bold py-3 px-10 rounded-xl opacity-30 cursor-not-allowed transition-all shadow-lg active:scale-95 font-impact uppercase tracking-widest">
-                피버 타임
-            </button>
+            <div class="w-full flex justify-center relative">
+                <button id="fever-btn" onclick="activateFever()" disabled class="bg-gray-500 text-white font-bold py-3 px-10 rounded-xl opacity-30 cursor-not-allowed transition-all shadow-lg active:scale-95 font-impact uppercase tracking-widest">
+                    피버 타임
+                </button>
+
+                <!-- Ending Button (Hidden by default) -->
+                <button id="ending-btn" onclick="triggerEnding()" class="hidden absolute right-0 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold py-3 px-6 rounded-xl shadow-[0_0_15px_rgba(234,179,8,0.5)] transition-all animate-bounce font-impact">
+                    엔딩 보기
+                </button>
+            </div>
         </div>
 
         <!-- Particle Container -->
         <div id="particles" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
+    </div>
+
+    <!-- Ending Overlay -->
+    <div id="ending-overlay" class="absolute inset-0 z-[100] hidden flex flex-col items-center justify-center">
+        <img id="ending-img" src="" class="w-full h-full object-contain">
+        <button id="restart-btn" onclick="resetGame()" class="hidden absolute bottom-12 bg-white text-gray-900 font-bold py-4 px-12 rounded-full text-2xl shadow-2xl font-impact hover:bg-gray-200 transition-all">
+            다시 하기
+        </button>
     </div>
 
     <script>
@@ -226,6 +247,8 @@
         ];
         const TEAR_IMG = "https://raw.githubusercontent.com/caxs23/90tear/main/tear.png";
         const TEAR_AUDIO_URL = "https://raw.githubusercontent.com/caxs23/90tear/main/Shocked.mp3";
+        const ENDING_IMG_1 = "https://raw.githubusercontent.com/caxs23/90tear/main/er.png";
+        const ENDING_IMG_2 = "https://raw.githubusercontent.com/caxs23/90tear/main/er2.png";
 
         // --- Game State ---
         let score = 0;
@@ -251,9 +274,13 @@
         const milestoneMsg = document.getElementById('milestone-msg');
         const feverBar = document.getElementById('fever-bar');
         const feverBtn = document.getElementById('fever-btn');
+        const endingBtn = document.getElementById('ending-btn');
         const feverActiveText = document.getElementById('fever-active-text');
         const bannerContainer = document.getElementById('banner-container');
         const bannerText = document.getElementById('banner-text');
+        const endingOverlay = document.getElementById('ending-overlay');
+        const endingImg = document.getElementById('ending-img');
+        const restartBtn = document.getElementById('restart-btn');
 
         // --- Audio Object ---
         const tearAudio = new Audio(TEAR_AUDIO_URL);
@@ -290,7 +317,7 @@
             isFeverActive = false;
             updateFeverUI();
             
-            preloadImages([...BAG_POOL, TEAR_IMG]);
+            preloadImages([...BAG_POOL, TEAR_IMG, ENDING_IMG_1, ENDING_IMG_2]);
             loadNextBag();
 
             // Decay Logic
@@ -406,6 +433,11 @@
                 triggerBanner(score);
             }
 
+            // Ending Button Logic: Over 500
+            if (score >= 500) {
+                endingBtn.classList.remove('hidden');
+            }
+
             gameArea.classList.add('shake-active');
             bagImg.style.opacity = '0'; 
             tearOverlay.style.opacity = '1';
@@ -458,6 +490,36 @@
             milestoneMsg.innerText = MILESTONE_MSGS[Math.floor(Math.random() * MILESTONE_MSGS.length)];
             milestonePopup.classList.add('milestone-active');
             setTimeout(() => milestonePopup.classList.remove('milestone-active'), 2000);
+        }
+
+        function triggerEnding() {
+            // Stop any ongoing game logic
+            isFeverActive = false;
+            isTearing = true; // Prevent further swipes
+            
+            // Show black overlay
+            endingOverlay.classList.remove('hidden');
+            endingOverlay.style.opacity = '1';
+            
+            // Step 1: Show er.png for 3 seconds
+            endingImg.src = ENDING_IMG_1;
+            
+            setTimeout(() => {
+                // Step 2: Show er2.png with tear effect
+                tearAudio.play().catch(e => {}); // Play sound
+                endingImg.src = ENDING_IMG_2;
+                
+                // Add shake effect to ending image
+                endingImg.classList.add('shake-active');
+                createGravityParticles(false); // Add some water particles
+                
+                setTimeout(() => {
+                    endingImg.classList.remove('shake-active');
+                    // Step 3: Show Restart button after 3 seconds
+                    restartBtn.classList.remove('hidden');
+                }, 3000);
+                
+            }, 3000);
         }
 
         function createGravityParticles(isFever = false) {
