@@ -150,9 +150,9 @@
         <p class="absolute bottom-6 text-gray-500 text-sm">Design by AI Gemini</p>
     </div>
 
-    <!-- Banner Overlay -->
-    <div id="banner-container" class="absolute top-24 left-0 w-full z-[55] hidden bg-red-600/90 text-white py-2 overflow-hidden whitespace-nowrap border-y-2 border-yellow-400">
-        <div class="banner-rolling font-bold text-xl inline-block">
+    <!-- Banner Overlay (Modified: Removed red background and borders) -->
+    <div id="banner-container" class="absolute top-24 left-0 w-full z-[55] hidden py-2 overflow-hidden whitespace-nowrap pointer-events-none">
+        <div class="banner-rolling font-bold text-xl inline-block text-red-600 drop-shadow-sm">
             그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp; 그녀가 폭주하고 있습니다. &nbsp;&nbsp;&nbsp;&nbsp;
         </div>
     </div>
@@ -197,8 +197,8 @@
             </div>
         </div>
 
-        <!-- Fever UI Footer -->
-        <div class="absolute bottom-10 left-0 w-full px-10 z-40 flex flex-col items-center gap-4">
+        <!-- Fever UI Footer (Raised Position) -->
+        <div class="absolute bottom-16 left-0 w-full px-10 z-40 flex flex-col items-center gap-5">
             <!-- Simplified Thin Red Gauge Bar -->
             <div class="w-full h-1.5 bg-gray-800/30 rounded-full overflow-hidden">
                 <div id="fever-bar" class="h-full w-0 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] transition-all duration-200"></div>
@@ -235,7 +235,6 @@
         let feverGauge = 0; 
         let isFeverActive = false;
         const FEVER_MAX = 100;
-        // Increased Increment (2.3x): 5 * 2.3 = 11.5 per tear
         const FEVER_INCREMENT = 11.5; 
 
         // --- Elements ---
@@ -284,9 +283,10 @@
             preloadImages([...BAG_POOL, TEAR_IMG]);
             loadNextBag();
 
-            // Slow decay
+            // Decay Logic
             setInterval(() => {
-                if (!isFeverActive && feverGauge > 0) {
+                // 게이지가 100(MAX)이 아니거나 피버 타임이 아닐 때만 감소
+                if (!isFeverActive && feverGauge > 0 && feverGauge < FEVER_MAX) {
                     feverGauge = Math.max(0, feverGauge - 0.3);
                     updateFeverUI();
                 }
@@ -346,7 +346,7 @@
             feverActiveText.classList.add('flex');
             
             let feverDuration = 5000;
-            let intervalTime = 120; // Slightly faster automatic tearing
+            let intervalTime = 120;
             
             const feverInterval = setInterval(() => {
                 performTear(true);
@@ -392,6 +392,7 @@
                 updateFeverUI();
             }
 
+            // Banner trigger logic (unchanged)
             if (score === 50 || score === 100) {
                 bannerContainer.classList.remove('hidden');
                 setTimeout(() => bannerContainer.classList.add('hidden'), 5000);
