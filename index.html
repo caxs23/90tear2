@@ -122,13 +122,12 @@
             animation: fever-scale 0.5s infinite ease-in-out;
         }
 
-        /* Rolling Banner Animation (Modified: Once, slower) */
+        /* Rolling Banner Animation */
         @keyframes roll-banner-once {
             0% { transform: translateX(100vw); }
             100% { transform: translateX(-100%); }
         }
         .banner-rolling {
-            /* Once across the screen over 6 seconds */
             animation: roll-banner-once 6s linear forwards;
         }
     </style>
@@ -151,7 +150,7 @@
         <p class="absolute bottom-6 text-gray-500 text-sm">Design by AI Gemini</p>
     </div>
 
-    <!-- Banner Overlay (Modified: Larger Text, No Background) -->
+    <!-- Banner Overlay -->
     <div id="banner-container" class="absolute top-32 left-0 w-full z-[55] hidden overflow-hidden whitespace-nowrap pointer-events-none">
         <div id="banner-text" class="font-impact text-5xl inline-block text-red-600 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             그녀가 폭주하고 있습니다.
@@ -259,8 +258,17 @@
         // --- Audio Object ---
         const tearAudio = new Audio(TEAR_AUDIO_URL);
 
-        // --- Milestone Messages ---
+        // --- Milestone & Banner Messages ---
         const MILESTONE_MSGS = ["대단해요!", "놀라워요!", "미쳤다!", "전설의 등장!", "멈출 수 없어!", "스트레스 타파!", "신의 손!"];
+        
+        const BANNER_MSGS = [
+            "그녀를 아무도 막을 수 없습니다!",
+            "수액백이 비명을 지르고 있습니다!",
+            "분노의 찢기가 계속됩니다!",
+            "세상의 모든 수액백을 찢을 기세입니다!",
+            "폭주의 끝은 어디인가!",
+            "파괴적인 핸들링이 시작되었습니다!"
+        ];
 
         // --- Initialization ---
         function startGame() {
@@ -395,7 +403,7 @@
 
             // Banner trigger logic: Every 50 tears
             if (score > 0 && score % 50 === 0) {
-                triggerBanner();
+                triggerBanner(score);
             }
 
             gameArea.classList.add('shake-active');
@@ -423,9 +431,18 @@
             }
         }
 
-        function triggerBanner() {
+        function triggerBanner(currentScore) {
+            // Set message
+            if (currentScore === 50) {
+                bannerText.innerText = "그녀가 폭주하고 있습니다.";
+            } else {
+                const randomMsg = BANNER_MSGS[Math.floor(Math.random() * BANNER_MSGS.length)];
+                bannerText.innerText = randomMsg;
+            }
+
             bannerContainer.classList.remove('hidden');
             bannerText.classList.remove('banner-rolling');
+            
             // Force reflow to restart animation
             void bannerText.offsetWidth; 
             bannerText.classList.add('banner-rolling');
