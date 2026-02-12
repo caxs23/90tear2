@@ -236,15 +236,24 @@
     <script>
         // --- Asset Configuration ---
         const INITIAL_BAG = "https://raw.githubusercontent.com/caxs23/90tear/main/NS.png";
-        const BAG_POOL = [
+        
+        // Bags separated by frequency category for weighted selection
+        const HIGH_FREQ_BAGS = [
             "https://raw.githubusercontent.com/caxs23/90tear/main/NS.png",
             "https://raw.githubusercontent.com/caxs23/90tear/main/10dw.png",
             "https://raw.githubusercontent.com/caxs23/90tear/main/5ds.png",
-            "https://raw.githubusercontent.com/caxs23/90tear/main/5dw.png",
+            "https://raw.githubusercontent.com/caxs23/90tear/main/5dw.png"
+        ];
+        
+        const NORMAL_FREQ_BAGS = [
             "https://raw.githubusercontent.com/caxs23/90tear/main/pls.png",
             "https://raw.githubusercontent.com/caxs23/90tear/main/wfi.png",
             "https://raw.githubusercontent.com/caxs23/90tear/main/tpn.png"
         ];
+
+        // All bags for preloading
+        const ALL_BAGS = [...HIGH_FREQ_BAGS, ...NORMAL_FREQ_BAGS];
+
         const TEAR_IMG = "https://raw.githubusercontent.com/caxs23/90tear/main/tear.png";
         const TEAR_AUDIO_URL = "https://raw.githubusercontent.com/caxs23/90tear/main/Shocked.mp3";
         const ENDING_IMG_1 = "https://raw.githubusercontent.com/caxs23/90tear/main/er.png";
@@ -257,6 +266,8 @@
         let isFirstBag = true;
         let feverGauge = 0; 
         let isFeverActive = false;
+        let lastMilestoneMsg = "";
+        let lastBannerMsg = "";
         const FEVER_MAX = 100;
         const FEVER_INCREMENT = 11.5; 
 
@@ -285,8 +296,13 @@
         // --- Audio Object ---
         const tearAudio = new Audio(TEAR_AUDIO_URL);
 
-        // --- Milestone & Banner Messages ---
-        const MILESTONE_MSGS = ["대단해요!", "놀라워요!", "미쳤다!", "전설의 등장!", "멈출 수 없어!", "스트레스 타파!", "신의 손!"];
+        // --- Milestone & Banner Messages (Expanded) ---
+        const MILESTONE_MSGS = [
+            "대단해요!", "놀라워요!", "미쳤다!", "전설의 등장!", 
+            "멈출 수 없어!", "스트레스 타파!", "신의 손!", "엄청난 속도!",
+            "찢기의 달인!", "환상적이에요!", "짜릿해!", "폭풍 성장!",
+            "손이 안 보여요!", "이것이 실력이다!", "완벽해요!"
+        ];
         
         const BANNER_MSGS = [
             "그녀를 아무도 막을 수 없습니다!",
@@ -294,7 +310,13 @@
             "분노의 찢기가 계속됩니다!",
             "세상의 모든 수액백을 찢을 기세입니다!",
             "폭주의 끝은 어디인가!",
-            "파괴적인 핸들링이 시작되었습니다!"
+            "파괴적인 핸들링이 시작되었습니다!",
+            "전설적인 기록이 갱신되고 있습니다!",
+            "응급실의 수액백이 남아나질 않습니다!",
+            "그녀의 손길에 모든 것이 찢겨나갑니다!",
+            "멈추지 않는 질주, 폭주 기관차!",
+            "지금 이 순간, 역사가 쓰여지고 있습니다!",
+            "경이로운 속도에 모두가 놀라고 있습니다!"
         ];
 
         // --- Initialization ---
@@ -317,7 +339,7 @@
             isFeverActive = false;
             updateFeverUI();
             
-            preloadImages([...BAG_POOL, TEAR_IMG, ENDING_IMG_1, ENDING_IMG_2]);
+            preloadImages([...ALL_BAGS, TEAR_IMG, ENDING_IMG_1, ENDING_IMG_2]);
             loadNextBag();
 
             // Decay Logic
@@ -340,6 +362,21 @@
             });
         }
 
+        // --- Queue Generation with Weighting ---
+        function refillBagQueue() {
+            let pool = [];
+            // Add HIGH_FREQ_BAGS 3 times (Weight 3)
+            for(let i=0; i<3; i++) {
+                pool.push(...HIGH_FREQ_BAGS);
+            }
+            // Add NORMAL_FREQ_BAGS 2 times (Weight 2) -> Ratio 3:2 = 1.5:1
+            for(let i=0; i<2; i++) {
+                pool.push(...NORMAL_FREQ_BAGS);
+            }
+            // Shuffle
+            return pool.sort(() => Math.random() - 0.5);
+        }
+
         function loadNextBag() {
             if (isFeverActive) return; 
             isTearing = false;
@@ -353,7 +390,7 @@
                 isFirstBag = false;
             } else {
                 if (currentBagQueue.length === 0) {
-                    currentBagQueue = [...BAG_POOL].sort(() => Math.random() - 0.5);
+                    currentBagQueue = refillBagQueue();
                 }
                 bagImg.src = currentBagQueue.pop();
             }
@@ -451,8 +488,12 @@
 
             if (fromFever) {
                 setTimeout(() => {
-                    currentBagQueue = [...BAG_POOL].sort(() => Math.random() - 0.5);
+                    // Refill if empty (handling quick depletion in fever)
+                    if (currentBagQueue.length === 0) {
+                        currentBagQueue = refillBagQueue();
+                    }
                     bagImg.src = currentBagQueue.pop();
+                    
                     tearOverlay.classList.remove('tear-flash');
                     tearOverlay.style.opacity = '0';
                     bagImg.style.opacity = '1';
@@ -463,14 +504,28 @@
             }
         }
 
+        // --- Helper to get random message without repeat ---
+        function getUniqueMessage(array, lastMsg) {
+            let newMsg;
+            let attempts = 0;
+            do {
+                newMsg = array[Math.floor(Math.random() * array.length)];
+                attempts++;
+            } while (newMsg === lastMsg && attempts < 5); // Avoid infinite loop safety
+            return newMsg;
+        }
+
         function triggerBanner(currentScore) {
             // Set message
+            let msg;
             if (currentScore === 50) {
-                bannerText.innerText = "그녀가 폭주하고 있습니다.";
+                msg = "그녀가 폭주하고 있습니다.";
             } else {
-                const randomMsg = BANNER_MSGS[Math.floor(Math.random() * BANNER_MSGS.length)];
-                bannerText.innerText = randomMsg;
+                msg = getUniqueMessage(BANNER_MSGS, lastBannerMsg);
             }
+            
+            lastBannerMsg = msg;
+            bannerText.innerText = msg;
 
             bannerContainer.classList.remove('hidden');
             bannerText.classList.remove('banner-rolling');
@@ -487,35 +542,33 @@
 
         function showMilestone(count) {
             milestoneCount.innerText = `${count}개 돌파!`;
-            milestoneMsg.innerText = MILESTONE_MSGS[Math.floor(Math.random() * MILESTONE_MSGS.length)];
+            
+            const msg = getUniqueMessage(MILESTONE_MSGS, lastMilestoneMsg);
+            lastMilestoneMsg = msg;
+            
+            milestoneMsg.innerText = msg;
             milestonePopup.classList.add('milestone-active');
             setTimeout(() => milestonePopup.classList.remove('milestone-active'), 2000);
         }
 
         function triggerEnding() {
-            // Stop any ongoing game logic
             isFeverActive = false;
-            isTearing = true; // Prevent further swipes
+            isTearing = true;
             
-            // Show black overlay
             endingOverlay.classList.remove('hidden');
             endingOverlay.style.opacity = '1';
             
-            // Step 1: Show er.png for 3 seconds
             endingImg.src = ENDING_IMG_1;
             
             setTimeout(() => {
-                // Step 2: Show er2.png with tear effect
-                tearAudio.play().catch(e => {}); // Play sound
+                tearAudio.play().catch(e => {}); 
                 endingImg.src = ENDING_IMG_2;
                 
-                // Add shake effect to ending image
                 endingImg.classList.add('shake-active');
-                createGravityParticles(false); // Add some water particles
+                createGravityParticles(false); 
                 
                 setTimeout(() => {
                     endingImg.classList.remove('shake-active');
-                    // Step 3: Show Restart button after 3 seconds
                     restartBtn.classList.remove('hidden');
                 }, 3000);
                 
@@ -523,7 +576,8 @@
         }
 
         function createGravityParticles(isFever = false) {
-            const particleCount = isFever ? 20 : 35;
+            // Doubled particle counts: Normal was 35->70, Fever was 20->40
+            const particleCount = isFever ? 40 : 70;
             const colors = ['#87CEEB', '#B0E0E6', '#E0F7FA', '#ffffff', '#4FC3F7'];
             const originX = window.innerWidth / 2;
             const originY = window.innerHeight / 2;
