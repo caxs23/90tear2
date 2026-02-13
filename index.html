@@ -138,13 +138,23 @@
         }
         
         @keyframes text-scroll-up {
-            0% { opacity: 0; transform: translateY(50vh); }
-            20% { opacity: 1; }
+            0% { opacity: 0; transform: translateY(30px); }
             100% { opacity: 1; transform: translateY(0); }
         }
         
-        .story-scroll {
-            animation: text-scroll-up 4s ease-out forwards;
+        .story-fade-in {
+            animation: text-scroll-up 1.5s ease-out forwards;
+        }
+
+        /* Fade in red question */
+        @keyframes red-fade-in {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .red-question {
+            animation: red-fade-in 1s ease-out forwards;
+            animation-delay: 2.5s;
+            opacity: 0;
         }
 
         /* Fade in choices */
@@ -154,8 +164,8 @@
         }
         .choices-fade {
             animation: fade-in-choices 1s ease-out forwards;
-            animation-delay: 4s; /* Wait for text scroll */
-            opacity: 0; /* Start hidden */
+            animation-delay: 4s; 
+            opacity: 0; 
         }
     </style>
 </head>
@@ -250,18 +260,21 @@
     <div id="ending-overlay" class="absolute inset-0 z-[100] hidden flex flex-col items-center justify-center">
         <!-- Story Text -->
         <div id="ending-story-container" class="absolute inset-0 flex flex-col items-center justify-center p-8 hidden text-center z-20">
-             <p id="ending-scroll-text" class="text-white text-xl md:text-2xl font-bold leading-loose whitespace-pre-line">
-                정신없이 수액을 찢다보니
-                주변에는 찢어진 수액 잔해들이
-                널브러져 있었다..
-                
-                더 이상 찢을 수액은
-                세상에 없었다..
-                
-                남은 건 하나 뿐이야..
-
-                세상을 찢을까?
-             </p>
+             <div id="ending-scroll-text" class="text-white text-xl md:text-2xl font-bold leading-loose">
+                <div class="story-fade-in">
+                    정신없이 수액을 찢다보니<br>
+                    주변에는 찢어진 수액 잔해들이<br>
+                    널브러져 있었다..<br><br>
+                    
+                    더 이상 찢을 수액은<br>
+                    세상에 없었다..<br><br>
+                    
+                    남은 건 하나 뿐이야..
+                </div>
+                <div class="red-question text-3xl md:text-4xl text-red-600 font-black mt-10 drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]">
+                    세상을 찢을까?
+                </div>
+             </div>
              <!-- Choices -->
              <div id="ending-choices" class="mt-12 flex gap-6 choices-fade opacity-0">
                  <button onclick="chooseTear()" class="bg-red-600 text-white px-8 py-4 rounded-xl font-bold text-xl hover:bg-red-700 shadow-[0_0_15px_rgba(220,38,38,0.5)] transform hover:scale-105 transition">
@@ -276,7 +289,7 @@
         <!-- Ending Image (Hidden initially) -->
         <img id="ending-img" src="" class="absolute inset-0 w-full h-full object-contain hidden z-10">
         
-        <!-- Ending Result Text (Changed text color to black for better visibility) -->
+        <!-- Ending Result Text -->
         <p id="ending-result-text" class="absolute bottom-36 w-full text-center text-gray-900 text-xl md:text-2xl font-black drop-shadow-[0_2px_2px_rgba(255,255,255,0.5)] hidden z-30 px-4 whitespace-pre-line"></p>
 
         <!-- Restart Button -->
@@ -596,7 +609,20 @@
             endingOverlay.style.opacity = '1';
 
             endingStoryContainer.classList.remove('hidden');
-            endingScrollText.classList.add('story-scroll');
+            // Reset animations if needed
+            const scrollText = document.querySelector('.story-fade-in');
+            const redText = document.querySelector('.red-question');
+            const choices = document.getElementById('ending-choices');
+            
+            scrollText.style.animation = 'none';
+            redText.style.animation = 'none';
+            choices.style.animation = 'none';
+            
+            void scrollText.offsetWidth; // trigger reflow
+            
+            scrollText.style.animation = null;
+            redText.style.animation = null;
+            choices.style.animation = null;
         }
 
         function chooseTear() {
